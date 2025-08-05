@@ -49,7 +49,7 @@ class ArbitrageScanner:
         net_profit = gross_profit - (fee_buy + fee_sell)
 
         if net_profit > self.threshold:
-            logging.info(f"💰 Arbitrage opportunity!")
-            logging.info(f"Buy on {buy_exchange} @ {buy_price}")
-            logging.info(f"Sell on {sell_exchange} @ {sell_price}")
-            logging.info(f"Net profit: {net_profit * 100:.4f}%")
+            logging.info(f"💰 Арбитражная возможность!")
+            logging.info(f"Купить на {buy_exchange} @ {buy_price}")
+            logging.info(f"Продать на {sell_exchange} @ {sell_price}")
+            logging.info(f"Чистая прибыль: {net_profit * 100:.4f}%")

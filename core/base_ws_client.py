@@ -5,7 +5,14 @@ import websockets
 import json
 import logging
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,                             # Уровень логов (DEBUG, INFO, WARNING, ERROR)
+    format="%(asctime)s [%(levelname)s] %(message)s",  # Формат логов
+    handlers=[
+        logging.FileHandler("logs/scanner.log"),        # Файл для логов
+        logging.StreamHandler()                     # Вывод в консоль
+    ]
+)
 
 class BaseWSClient:
     """
@@ -49,12 +56,12 @@ class BaseWSClient:
             try:
                 async with websockets.connect(self.url, ping_interval=20, ping_timeout=10) as ws:
                     self.ws = ws
-                    logging.info(f"[{self.name}] Connected to {self.url}")
+                    logging.info(f"[{self.name}] Подключено к {self.url}")
                     await self.subscribe()
                     await self.listen()
             except Exception as e:
-                logging.warning(f"[{self.name}] Connection error: {e}")
-                logging.info(f"[{self.name}] Reconnecting in {self.reconnect_delay} seconds...")
+                logging.warning(f"[{self.name}] Ошибка подключения: {e}")
+                logging.info(f"[{self.name}] Повторное подключение через {self.reconnect_delay} секунд...")
                 await asyncio.sleep(self.reconnect_delay)
 
     async def subscribe(self):
@@ -66,7 +73,7 @@ class BaseWSClient:
         """
         msg = json.dumps(self.subscribe_payload)
         await self.ws.send(msg)
-        logging.info(f"[{self.name}] Subscribed with payload: {msg}")
+        logging.info(f"[{self.name}] Подписка с payload: {msg}")
 
     async def listen(self):
         """
@@ -81,4 +88,4 @@ class BaseWSClient:
                 data = json.loads(message)
                 await self.message_handler(data)
             except Exception as e:
-                logging.error(f"[{self.name}] Failed to handle message: {e}")
+                logging.error(f"[{self.name}] Ошибка обработки сообщения: {e}")

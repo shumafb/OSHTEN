@@ -39,14 +39,6 @@ class BybitWS:
         
         Args:
             msg (dict): Сообщение от биржи, содержащее данные о ценах.
-                Ожидаемый формат:
-                {
-                    "topic": "tickers.BTCUSDT",
-                    "data": {
-                        "bid1Price": "цена покупки",
-                        "ask1Price": "цена продажи"
-                    }
-                }
         """
         # Пропускаем системные сообщения
         if "topic" not in msg or not msg.get("data"):
@@ -57,15 +49,18 @@ class BybitWS:
 
         data = msg["data"]
         try:
-            bid = float(data["bid1Price"])
-            ask = float(data["ask1Price"])
-            await self.price_callback(
-                exchange="bybit",
-                bid=bid,
-                ask=ask
-            )
+            update = {"exchange": "bybit"}
+
+            if "ask1Price" in data:
+                update["ask"] = float(data["ask1Price"])
+            if "bid1Price" in data:
+                update["bid"] = float(data["bid1Price"])
+
+            if "ask" in update or "bid" in update:
+                self.price_callback(**update)
+
         except Exception as e:
-            print(f"[BybitWS] Error parsing price: {e}")
+            print(f"[BybitWS] Ошибка парсинга цены: {e}")
 
     async def start(self):
         """

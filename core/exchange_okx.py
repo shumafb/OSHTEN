@@ -60,13 +60,13 @@ class OKXWS:
             data = msg["data"][0]
             bid = float(data["bidPx"])
             ask = float(data["askPx"])
-            await self.price_callback(
+            self.price_callback(
                 exchange="okx",
                 bid=bid,
                 ask=ask
             )
         except Exception as e:
-            print(f"[OKXWS] Error parsing price: {e}")
+            print(f"[OKXWS] Ошибка парсинга цены: {e}")
 
     async def start(self):
         """
