@@ -20,7 +20,7 @@ class PriceState:
             self.data[exchange]["ask"] = ask
 
         self.data[exchange]["timestamp"] = time.time()
-        logging.info(f"Обновлены цены {exchange}: {self.data[exchange]}")
+        # logging.info(f"Обновлены цены {exchange}: {self.data[exchange]}")
 
     def get(self, exchange: str):
         return self.data.get(exchange)
