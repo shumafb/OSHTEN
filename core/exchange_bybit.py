@@ -1,4 +1,3 @@
-import asyncio
 from core.base_ws_client import BaseWSClient
 
 # URL для подключения к WebSocket API биржи Bybit

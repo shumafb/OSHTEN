@@ -1,6 +1,5 @@
-
-
 from core.price_state import PriceState
+
 
 class ArbitrageEvaluator:
     def __init__(self, price_state: PriceState):
@@ -9,7 +8,7 @@ class ArbitrageEvaluator:
             "bybit": 0.0018,  # 0.18%
             "okx": 0.0010     # 0.10%
         }
-        self.min_profit_percent = 0.3
+        self.min_profit_percent = 0.3 # минимальная прибыль в процентах
 
     def evaluate(self, buy_exchange: str, sell_exchange: str):
         buy = self.price_state.get(buy_exchange)

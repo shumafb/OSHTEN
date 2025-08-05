@@ -1,6 +1,7 @@
 # core/scanner.py
 
 import logging
+
 from core.price_state import PriceState
 
 # === НАСТРАИВАЕМЫЕ КОНСТАНТЫ ===

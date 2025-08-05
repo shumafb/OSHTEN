@@ -1,18 +1,9 @@
-# core/base_ws_client.py
-
 import asyncio
-import websockets
 import json
 import logging
 
-logging.basicConfig(
-    level=logging.INFO,                             # Уровень логов (DEBUG, INFO, WARNING, ERROR)
-    format="%(asctime)s [%(levelname)s] %(message)s",  # Формат логов
-    handlers=[
-        logging.FileHandler("logs/scanner.log"),        # Файл для логов
-        logging.StreamHandler()                     # Вывод в консоль
-    ]
-)
+import websockets
+
 
 class BaseWSClient:
     """
