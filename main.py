@@ -8,7 +8,7 @@ from core.exchange_okx import OKXWS
 from core.price_state import PriceState
 from core.paper_trading import PaperTradeExecutor
 
-from notifier.telegram import send_telegram_message, pretty_arbitrage_message
+from notifier.telegram import send_telegram_message, pretty_arbitrage_message, should_notify
 
 logging.basicConfig(
     # level=logging.DEBUG,
@@ -34,13 +34,13 @@ async def main():
 
 
         op1 = evaluator.evaluate("okx", "bybit")
-        if op1:
+        if op1 and should_notify():
             logging.info(f"💰 Арбитраж!: {op1}")
             send_telegram_message(pretty_arbitrage_message(op1))
             paper_executor.execute(op1)
 
         op2 = evaluator.evaluate("bybit", "okx")
-        if op2:
+        if op2 and should_notify():
             logging.info(f"💰 Арбитраж!: {op2}")
             send_telegram_message(pretty_arbitrage_message(op2))
             paper_executor.execute(op2)
