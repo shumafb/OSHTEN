@@ -1,9 +1,14 @@
 from core.base_ws_client import BaseWSClient
+import os
+from dotenv import load_dotenv
+import logging
+
+load_dotenv()
 
 # URL для подключения к WebSocket API биржи Bybit
-BYBIT_URL = "wss://stream.bybit.com/v5/public/linear"
+BYBIT_URL = os.getenv("BYBIT_URL", "wss://stream.bybit.com/v5/public/linear")
 # Торговая пара BTC/USDT
-PAIR = "BTCUSDT"
+PAIR = os.getenv("BYBIT_PAIR")
 # Канал подписки на тикеры
 CHANNEL = f"tickers.{PAIR}"
 
@@ -59,7 +64,7 @@ class BybitWS:
                 self.price_callback(**update)
 
         except Exception as e:
-            print(f"[BybitWS] Ошибка парсинга цены: {e}")
+            logging.error(f"[BybitWS] Ошибка парсинга цены: {e}")
 
     async def start(self):
         """

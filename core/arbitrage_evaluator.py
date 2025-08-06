@@ -1,14 +1,22 @@
 from core.price_state import PriceState
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+TAKER_FEE_BYBIT = float(os.getenv("TAKER_FEE_BYBIT"))
+TAKER_FEE_OKX = float(os.getenv("TAKER_FEE_OKX"))
+THRESHOLD_PERCENT = float(os.getenv("THRESHOLD_PERCENT"))
 
 
 class ArbitrageEvaluator:
     def __init__(self, price_state: PriceState):
         self.price_state = price_state
         self.fees = {
-            "bybit": 0.0018,  # 0.18%
-            "okx": 0.0010     # 0.10%
+            "bybit": TAKER_FEE_BYBIT,
+            "okx": TAKER_FEE_OKX
         }
-        self.min_profit_percent = 0.3 # минимальная прибыль в процентах
+        self.min_profit_percent = THRESHOLD_PERCENT
 
     def evaluate(self, buy_exchange: str, sell_exchange: str):
         buy = self.price_state.get(buy_exchange)
@@ -39,5 +47,7 @@ class ArbitrageEvaluator:
             "sell_exchange": sell_exchange,
             "buy_price": ask,
             "sell_price": bid,
+            "fee_buy": fee_buy,
+            "fee_sell": fee_sell,
             "profit_percent": round(profit_percent, 4)
         }

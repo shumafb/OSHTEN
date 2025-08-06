@@ -1,9 +1,16 @@
 from core.base_ws_client import BaseWSClient
+import os
+from dotenv import load_dotenv
+import logging
+
+load_dotenv()
+
+
 
 # URL для подключения к WebSocket API биржи OKX
-OKX_URL = "wss://ws.okx.com:8443/ws/v5/public"
+OKX_URL = os.getenv("OKX_URL", "wss://ws.okx.com:8443/ws/v5/public")
 # Торговая пара BTC/USDT
-PAIR = "BTC-USDT"
+PAIR = os.getenv("OKX_PAIR", "BTC-USDT")
 # Параметры подписки на канал тикеров
 CHANNEL = {
     "op": "subscribe",
@@ -65,7 +72,7 @@ class OKXWS:
                 ask=ask
             )
         except Exception as e:
-            print(f"[OKXWS] Ошибка парсинга цены: {e}")
+            logging.error(f"[OKXWS] Ошибка парсинга цены: {e}")
 
     async def start(self):
         """

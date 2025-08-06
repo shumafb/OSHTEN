@@ -1,25 +1,30 @@
 import asyncio
 import logging
+import datetime
 
 from core.arbitrage_evaluator import ArbitrageEvaluator
 from core.exchange_bybit import BybitWS
 from core.exchange_okx import OKXWS
 from core.price_state import PriceState
-from core.dry_executor import DryRunExecutor
+from core.paper_trading import PaperTradeExecutor
+
+from notifier.telegram import send_telegram_message, pretty_arbitrage_message
 
 logging.basicConfig(
     # level=logging.DEBUG,
     level=logging.INFO,
+    # level=logging.ERROR,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
-        logging.FileHandler("logs/scanner.log"),
+        logging.FileHandler(f"logs/{datetime.datetime.now().strftime('%Y-%m-%d')}.log"),
         logging.StreamHandler()
-                    ])
+    ]
+)
 
 async def main():
     price_state = PriceState()
     evaluator = ArbitrageEvaluator(price_state)
-    dry_executor = DryRunExecutor(price_state)
+    paper_executor = PaperTradeExecutor()
 
     def price_callback(exchange: str, bid: float = None, ask: float = None):
         price_state.update(exchange=exchange, bid=bid, ask=ask)
@@ -27,19 +32,18 @@ async def main():
         if not price_state.is_ready():
             return
 
-        logging.debug(f"📈 {exchange} - Bid: {bid}, Ask: {ask}, разница: {ask - bid}")
-        
+
         op1 = evaluator.evaluate("okx", "bybit")
         if op1:
             logging.info(f"💰 Арбитраж!: {op1}")
-            dry_executor.execute(op1)
-            logging.info(f"Баланс после сделки: {dry_executor.balances}")
+            send_telegram_message(pretty_arbitrage_message(op1))
+            paper_executor.execute(op1)
 
         op2 = evaluator.evaluate("bybit", "okx")
         if op2:
             logging.info(f"💰 Арбитраж!: {op2}")
-            dry_executor.execute(op2)
-            logging.info(f"Баланс после сделки: {dry_executor.balances}")
+            send_telegram_message(pretty_arbitrage_message(op2))
+            paper_executor.execute(op2)
 
     bybit = BybitWS(price_callback=price_callback)
     okx = OKXWS(price_callback=price_callback)
