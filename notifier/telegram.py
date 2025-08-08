@@ -32,7 +32,7 @@ def send_telegram_message(text: str):
         if response.status_code != 200:
             logging.error(f"Ошибка отправки сообщения в Telegram: {response.status_code}, {response.text}")
         else:
-            logging.info(f"Сообщение успешно отправлено в Telegram. {text}")
+            logging.info("Сообщение успешно отправлено в Telegram")
     except requests.RequestException as e:
         logging.error(f"Ошибка при отправке сообщения в Telegram: {e}")
 
@@ -51,13 +51,3 @@ def pretty_arbitrage_message(opportunity: dict) -> str:
         f"🔴 Продать: {sell_price}﹩\n\n"
     )
     return message
-
-
-op = {"buy_exchange": "okx",
-    "sell_exchange": "bybit",
-    "buy_price": 100.0,
-    "sell_price": 105.0,
-    "profit_percent": 5.0
-}
-
-send_telegram_message(pretty_arbitrage_message(op))

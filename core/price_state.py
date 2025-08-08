@@ -6,21 +6,20 @@ from typing import Dict
 class PriceState:
     def __init__(self):
         self.data: Dict[str, Dict[str, float]] = {
-            "bybit": {},
-            "okx": {}
+            "bybit": {"bid": None, "ask": None, "timestamp": None},
+            "okx": {"bid": None, "ask": None, "timestamp": None}
         }
 
-    def update(self, exchange: str, bid: float = None, ask: float = None):
+    def update(self, exchange: str, bid: float = None, ask: float = None, timestamp: float = None):
         if exchange not in self.data:
-            self.data[exchange] = {}
+            self.data[exchange] = {"bid": None, "ask": None, "timestamp": None}
 
         if bid is not None:
             self.data[exchange]["bid"] = bid
         if ask is not None:
             self.data[exchange]["ask"] = ask
-
-        self.data[exchange]["timestamp"] = time.time()
-        logging.info(f"Обновлены цены {exchange}: {self.data[exchange]}")
+        if timestamp is not None:
+            self.data[exchange]["timestamp"] = timestamp
 
     def get(self, exchange: str):
         return self.data.get(exchange)

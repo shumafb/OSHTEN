@@ -53,7 +53,9 @@ class BybitWS:
 
         data = msg["data"]
         try:
-            update = {"exchange": "bybit"}
+            timestamp = float(msg.get("ts"))
+            update = {"exchange": "bybit", "timestamp": timestamp}
+            
 
             if "ask1Price" in data:
                 update["ask"] = float(data["ask1Price"])
@@ -63,8 +65,9 @@ class BybitWS:
             if "ask" in update or "bid" in update:
                 self.price_callback(**update)
 
+
         except Exception as e:
-            logging.error(f"[BybitWS] Ошибка парсинга цены: {e}")
+            logging.error(f"[BybitWS] Ошибка парсинга: {e}")
 
     async def start(self):
         """
