@@ -3,6 +3,7 @@ import json
 import logging
 
 import websockets
+import websockets.protocol
 
 
 class BaseWSClient:
@@ -16,7 +17,6 @@ class BaseWSClient:
         name (str): Имя клиента для логирования
         message_handler (callable): Функция обработки входящих сообщений
         ws (websockets.WebSocketClientProtocol): Объект WebSocket соединения
-        reconnect_delay (int): Задержка в секундах перед повторным подключением
     """
 
     def __init__(self, url: str, subscribe_payload: dict, name: str, message_handler):
@@ -34,26 +34,39 @@ class BaseWSClient:
         self.name = name
         self.message_handler = message_handler
         self.ws = None
-        self.reconnect_delay = 5  # seconds
+        
+        self._initial_reconnect_delay = 5
+        self._max_reconnect_delay = 60
+        self._current_reconnect_delay = self._initial_reconnect_delay
+
+    def is_connected(self) -> bool:
+        """Проверяет, активно ли WebSocket соединение."""
+        return self.ws is not None and self.ws.protocol.state == websockets.protocol.State.OPEN
 
     async def connect(self):
         """
         Устанавливает и поддерживает WebSocket соединение.
         
-        Автоматически переподключается при обрыве связи с заданной задержкой.
+        Автоматически переподключается при обрыве связи с экспоненциальной задержкой.
         Настраивает ping/pong для проверки активности соединения.
         """
         while True:
             try:
                 async with websockets.connect(self.url, ping_interval=20, ping_timeout=10) as ws:
                     self.ws = ws
+                    # Сбрасываем задержку после успешного подключения
+                    self._current_reconnect_delay = self._initial_reconnect_delay
                     logging.info(f"[{self.name}] Подключено к {self.url}")
                     await self.subscribe()
                     await self.listen()
             except Exception as e:
                 logging.warning(f"[{self.name}] Ошибка подключения: {e}")
-                logging.info(f"[{self.name}] Повторное подключение через {self.reconnect_delay} секунд...")
-                await asyncio.sleep(self.reconnect_delay)
+                self.ws = None # Убедимся, что состояние консистентно
+                logging.info(f"[{self.name}] Повторное подключение через {self._current_reconnect_delay} секунд...")
+                await asyncio.sleep(self._current_reconnect_delay)
+                # Увеличиваем задержку для следующей попытки
+                self._current_reconnect_delay = min(self._current_reconnect_delay * 2, self._max_reconnect_delay)
+
 
     async def subscribe(self):
         """
