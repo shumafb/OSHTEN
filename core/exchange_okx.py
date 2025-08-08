@@ -66,7 +66,8 @@ class OKXWS:
             data = msg["data"][0]
             bid = float(data["bidPx"])
             ask = float(data["askPx"])
-            timestamp = float(data.get("ts"))
+            ts = data.get("ts")
+            timestamp = float(ts) if ts is not None else None
             self.price_callback(
                 exchange="okx",
                 bid=bid,

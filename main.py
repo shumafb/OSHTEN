@@ -11,7 +11,12 @@ from core.exchange_okx import OKXWS
 from core.price_state import PriceState
 from core.paper_trading import PaperTradeExecutor
 
-from notifier.telegram import send_telegram_message, pretty_arbitrage_message, should_notify
+from notifier.telegram import (
+    send_telegram_message,
+    pretty_arbitrage_message,
+    should_notify,
+    close_telegram_session,
+)
 
 load_dotenv()
 
@@ -46,6 +51,29 @@ async def main():
         if not price_state.is_ready():
             return
 
+        # Проверка свежести тиков и рассинхрона между биржами
+        if ENABLE_LATENCY_LOGGING or MAX_TICK_DELAY_MS:
+            prices = price_state.get_all()
+            now_ms = time.time() * 1000
+            ts_bybit = prices.get("bybit", {}).get("timestamp")
+            ts_okx = prices.get("okx", {}).get("timestamp")
+
+            fresh_bybit = (now_ms - ts_bybit) if ts_bybit is not None else None
+            fresh_okx = (now_ms - ts_okx) if ts_okx is not None else None
+
+            if ENABLE_LATENCY_LOGGING:
+                desync = None
+                if fresh_bybit is not None and fresh_okx is not None:
+                    desync = abs(fresh_bybit - fresh_okx)
+                logging.info(f"[LATENCY] bybit: {fresh_bybit} ms, okx: {fresh_okx} ms, desync: {desync} ms")
+
+            if MAX_TICK_DELAY_MS:
+                # Если любой тик устарел — пропускаем расчёт
+                if (fresh_bybit is None or fresh_bybit > MAX_TICK_DELAY_MS) or (
+                    fresh_okx is None or fresh_okx > MAX_TICK_DELAY_MS
+                ):
+                    return
+
         # prices = price_state.get_all()
         # ts_bybit = prices.get("bybit", {}).get("timestamp")
         # ts_okx = prices.get("okx", {}).get("timestamp")
@@ -62,6 +90,8 @@ async def main():
 
         if op1:
             logging.info(f"💰 Арбитраж!: {op1}")
+            if should_notify():
+                asyncio.create_task(send_telegram_message(pretty_arbitrage_message(op1)))
             # t3 = time.perf_counter()
             # send_telegram_message(pretty_arbitrage_message(op1))
             # t4 = time.perf_counter()
@@ -76,6 +106,8 @@ async def main():
         # t5 = time.perf_counter()
         if op2:
             logging.info(f"💰 Арбитраж!: {op2}")
+            if should_notify():
+                asyncio.create_task(send_telegram_message(pretty_arbitrage_message(op2)))
             # t6 = time.perf_counter()
             # send_telegram_message(pretty_arbitrage_message(op2))
             # t7 = time.perf_counter()
@@ -97,7 +129,10 @@ async def main():
             okx.start()
         )
 
-    await run_ws_clients()
+    try:
+        await run_ws_clients()
+    finally:
+        await close_telegram_session()
 
 if __name__ == "__main__":
     asyncio.run(main())

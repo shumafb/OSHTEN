@@ -28,4 +28,7 @@ class PriceState:
         return self.data
 
     def is_ready(self):
-        return all("bid" in self.data[ex] and "ask" in self.data[ex] for ex in self.data)
+        return all(
+            self.data[ex]["bid"] is not None and self.data[ex]["ask"] is not None
+            for ex in self.data
+        )

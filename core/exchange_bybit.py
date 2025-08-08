@@ -53,7 +53,8 @@ class BybitWS:
 
         data = msg["data"]
         try:
-            timestamp = float(msg.get("ts"))
+            ts = msg.get("ts")
+            timestamp = float(ts) if ts is not None else None
             update = {"exchange": "bybit", "timestamp": timestamp}
             
 
