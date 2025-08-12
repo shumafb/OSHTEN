@@ -197,8 +197,8 @@ async def get_updates(session: aiohttp.ClientSession, offset: int) -> List[dict]
         async with session.get(url, params=params) as resp:
             if resp.status == 200:
                 return (await resp.json()).get("result", [])
-    except (aiohttp.ClientError, asyncio.TimeoutError):
-        logging.warning("Ошибка получения обновлений от Telegram.")
+    except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+        logging.warning(f"Ошибка получения обновлений от Telegram: {e}")
     return []
 
 
