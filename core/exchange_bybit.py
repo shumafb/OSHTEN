@@ -7,72 +7,67 @@ load_dotenv()
 
 # URL для подключения к WebSocket API биржи Bybit
 BYBIT_URL = os.getenv("BYBIT_URL", "wss://stream.bybit.com/v5/public/linear")
-# Торговая пара BTC/USDT
-PAIR = os.getenv("BYBIT_PAIR")
-# Канал подписки на тикеры
-CHANNEL = f"tickers.{PAIR}"
 
 class BybitWS:
     """
     Клиент для работы с WebSocket API биржи Bybit.
-    Получает реал-тайм котировки криптовалютных пар.
+    Получает реал-тайм котировки для нескольких криптовалютных пар.
     """
     
-    def __init__(self, price_callback):
+    def __init__(self, symbols: list[str], price_callback):
         """
         Инициализация WebSocket клиента Bybit.
         
         Args:
+            symbols (list[str]): Список торговых пар для подписки (например, ["BTC-USDT", "ETH-USDT"])
             price_callback (callable): Функция обратного вызова для обработки цен.
-                Принимает параметры: exchange (str), bid (float), ask (float)
+                Принимает параметры: symbol(str), exchange (str), bid (float), ask (float), timestamp (float)
         """
+        channels = [f"tickers.{symbol.replace('-', '')}" for symbol in symbols]
         self.client = BaseWSClient(
             url=BYBIT_URL,
             subscribe_payload={
                 "op": "subscribe",
-                "args": [CHANNEL]
+                "args": channels
             },
             name="Bybit",
             message_handler=self.handle_message
         )
         self.price_callback = price_callback
+        # Для обратного маппинга из топика в символ
+        self.topic_to_symbol = {channel: symbol for channel, symbol in zip(channels, symbols)}
 
     async def handle_message(self, msg):
         """
         Обработка входящих WebSocket сообщений.
-        
-        Args:
-            msg (dict): Сообщение от биржи, содержащее данные о ценах.
         """
-        # Пропускаем системные сообщения
         if "topic" not in msg or not msg.get("data"):
             return
 
-        if msg["topic"] != CHANNEL:
+        topic = msg["topic"]
+        symbol = self.topic_to_symbol.get(topic)
+        if not symbol:
             return
 
         data = msg["data"]
         try:
             ts = msg.get("ts")
-            timestamp = float(ts) if ts is not None else None
-            update = {"exchange": "bybit", "timestamp": timestamp}
+            timestamp = float(ts) / 1000 if ts is not None else None
+            update = {"symbol": symbol, "exchange": "bybit", "timestamp": timestamp}
             
-
             if "ask1Price" in data:
                 update["ask"] = float(data["ask1Price"])
             if "bid1Price" in data:
                 update["bid"] = float(data["bid1Price"])
 
             if "ask" in update or "bid" in update:
-                self.price_callback(**update)
-
+                await self.price_callback(**update)
 
         except Exception as e:
-            logging.error(f"[BybitWS] Ошибка парсинга: {e}")
+            logging.error(f"[BybitWS] Ошибка парсинга для {symbol}: {e}")
 
     async def start(self):
         """
         Запускает WebSocket клиент.
-        Устанавливает соединение с биржей и начинает получать данные.
         """
         await self.client.connect()
